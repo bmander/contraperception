@@ -2,51 +2,107 @@
 <head>
   <script src="processing.js"></script>
 </head>
-<h1>Processing.js</h1>
-<h2>Simple processing.js via JavaScript</h2>
-<p>Clock</p>
-
+<h1>Contra Perception</h1>
 <p><canvas id="canvas1" width="400" height="400"></canvas></p>
 
 <script id="script1" type="text/javascript">
+
+    var dancer;
+    var centerX;
+    var centerY;
+    var maxArmLength;
+    var theta = 0;
+    var set;
+
+    function Dancer(x,y,bearing,lead,active) {
+        this.SIZE = 10;
+        this.POINTER = 12;
+        this.x = x;
+        this.y = y;
+        this.bearing = bearing;
+        this.lead = lead;
+        this.active = active;
+    }
+    Dancer.prototype.draw = function(processing) {
+        processing.stroke(0,0,0);
+        processing.strokeWeight(1.5);
+        processing.line(this.x, 
+                        this.y, 
+                        this.x+processing.cos(this.bearing)*this.POINTER,
+                        this.y-processing.sin(this.bearing)*this.POINTER);
+
+        processing.strokeWeight(1);
+        if(this.lead) {
+            processing.fill(128,128,128);
+        } else {
+            processing.fill(255,255,255);
+        }
+        processing.ellipse( this.x, this.y, this.SIZE, this.SIZE );
+        if(this.active) {
+            processing.fill(0,0,0,0);
+            processing.ellipse(this.x,this.y,this.SIZE+6,this.SIZE+6);
+        }
+    }
+
+    function Set(x,y,width,activelead,activefollow,inactivelead,inactivefollow) {
+        this.x=x;
+        this.y=y;
+        this.width=width;
+
+        activelead.x = this.x-width/2;
+        activelead.y = this.y-width/2;
+        activelead.active = true;
+        activelead.lead = true;
+
+        activefollow.x = this.x-width/2;
+        activefollow.y = this.y+width/2;
+        activefollow.active = true;
+        activefollow.lead = false;
+
+        inactivelead.x = this.x+width/2;
+        inactivelead.y = this.y+width/2;
+        inactivelead.active = false;
+        inactivelead.lead = true;
+
+        inactivefollow.x = this.x+width/2;
+        inactivefollow.y = this.y-width/2;
+        inactivefollow.active = false;
+        inactivefollow.lead = false;
+
+        this.activelead = activelead;
+        this.activefollow = activefollow;
+        this.inactivelead = inactivelead;
+        this.inactivefollow = inactivefollow;
+    }
+    Set.prototype.draw = function(processing) {
+        this.activelead.draw(processing);
+        this.activefollow.draw(processing);
+        this.inactivelead.draw(processing);
+        this.inactivefollow.draw(processing);
+    }
 
     // Simple way to attach js code to the canvas is by using a function
     function sketchProc(processing) {
         processing.setup = function() {
             processing.size( 400,400 );
+
+            // determine center and max clock arm length
+            centerX = processing.width / 2, centerY = processing.height / 2;
+
+            d1 = new Dancer(0,0,0,false,false);
+            d2 = new Dancer(0,0,0,false,false);
+            d3 = new Dancer(0,0,0,false,false);
+            d4 = new Dancer(0,0,0,false,false);
+
+            set = new Set(centerX, centerY, 30, d1, d2, d3, d4);
         }
 
       // Override draw function, by default it will be called 60 times per second
       processing.draw = function() {
-        // determine center and max clock arm length
-        var centerX = processing.width / 2, centerY = processing.height / 2;
-        var maxArmLength = Math.min(centerX, centerY);
-
-        function drawArm(position, lengthScale, weight) {      
-          processing.strokeWeight(weight);
-          processing.line(centerX, centerY, 
-            centerX + Math.sin(position * 2 * Math.PI) * lengthScale * maxArmLength,
-            centerY - Math.cos(position * 2 * Math.PI) * lengthScale * maxArmLength);
-        }
-
         // erase background
         processing.background(224);
 
-        processing.ellipse( centerX, centerY, maxArmLength*2*0.95, maxArmLength*2*0.95 );
-
-        var now = new Date();
-
-        // Moving hours arm by small increments
-        var hoursPosition = (now.getHours() % 12 + now.getMinutes() / 60) / 12;
-        drawArm(hoursPosition, 0.5, 5);
-
-        // Moving minutes arm by small increments
-        var minutesPosition = (now.getMinutes() + now.getSeconds() / 60) / 60;
-        drawArm(minutesPosition, 0.80, 3);
-
-        // Moving hour arm by second increments
-        var secondsPosition = now.getSeconds() / 60;
-        drawArm(secondsPosition, 0.90, 1);
+        set.draw(processing);
       };
       
     }
