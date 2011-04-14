@@ -13,15 +13,58 @@
     var maxArmLength;
     var theta = 0;
     var set;
+    var d1,d2,d3,d4;
+
+    var bpm=115;
+
+    var beatlen = 60/bpm;
 
     function Dancer(x,y,bearing,lead,active) {
         this.SIZE = 10;
         this.POINTER = 12;
         this.x = x;
         this.y = y;
+        this.vx = 0;
+        this.vy = 0;
         this.bearing = bearing;
         this.lead = lead;
         this.active = active;
+        this.lastincr=null;
+
+        this.stack = [];
+    }
+    Dancer.prototype.incr = function(processing) {
+        if(this.lastincr==null) {
+            this.lastincr = processing.millis();
+            return;
+        }
+
+        now = processing.millis();
+        dt = (now-this.lastincr)/1000; //convert millis to seconds
+
+        dx = this.vx*dt;
+        dy = this.vy*dt;
+
+        this.x += dx;
+        this.y += dy;
+
+        this.lastincr = now;
+    }
+    Dancer.prototype.move = function(pos,beats){
+        dt = beats*beatlen;
+        dx = pos[0]-this.x;
+        dy = pos[1]-this.y;
+        vx = dx/dt;
+        vy = dy/dt;
+
+        this.vx=vx;
+        this.vy=vy;
+    }
+    Dancer.prototype.push = function(){
+        this.stack.push( [this.x,this.y] );
+    }
+    Dancer.prototype.pop = function(){
+        return this.stack.pop();
     }
     Dancer.prototype.draw = function(processing) {
         processing.stroke(0,0,0);
@@ -42,6 +85,28 @@
             processing.fill(0,0,0,0);
             processing.ellipse(this.x,this.y,this.SIZE+6,this.SIZE+6);
         }
+    }
+    Dancer.prototype.face = function(dancer) {
+        dx = dancer.x-this.x;
+        dy = dancer.y-this.y;
+        this.bearing = Math.atan2(dy,dx);
+    }
+    Dancer.prototype.balance = function(dancer) {
+        this.step_toward( dancer );
+        this.step_away( dancer );
+    }
+    Dancer.prototype.step_forward= function(dancer, beats) {
+        this.push();
+
+        dx = dancer.x-this.x;
+        dy = dancer.y-this.y;
+        xp = this.x+dx/4;
+        yp = this.y+dy/4;
+
+        this.move([xp,yp], beats);
+    }
+    Dancer.prototype.step_away = function(beats) {
+        this.move(this.pop(), beats); 
     }
 
     function Set(x,y,width,activelead,activefollow,inactivelead,inactivefollow) {
@@ -80,13 +145,18 @@
         this.inactivelead.draw(processing);
         this.inactivefollow.draw(processing);
     }
+    Set.prototype.neighbor = function(processing) {
+        this.activelead.face( this.inactivefollow );
+        this.inactivefollow.face( this.activelead );
+        this.activefollow.face( this.inactivelead );
+        this.inactivelead.face( this.activefollow );
+    }
 
     // Simple way to attach js code to the canvas is by using a function
     function sketchProc(processing) {
         processing.setup = function() {
             processing.size( 400,400 );
 
-            // determine center and max clock arm length
             centerX = processing.width / 2, centerY = processing.height / 2;
 
             d1 = new Dancer(0,0,0,false,false);
@@ -101,6 +171,11 @@
       processing.draw = function() {
         // erase background
         processing.background(224);
+
+        d1.incr(processing);
+        d2.incr(processing);
+        d3.incr(processing);
+        d4.incr(processing);
 
         set.draw(processing);
       };
