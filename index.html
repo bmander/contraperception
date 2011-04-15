@@ -22,8 +22,6 @@
     function Dancer(x,y,facing,lead,active,P) {
         this.SIZE = 10;
         this.POINTER = 12;
-        this.x = x;
-        this.y = y;
         this.s = new P.PVector(x,y);
         this.vx = 0;
         this.vy = 0;
@@ -44,8 +42,6 @@
     }
     Dancer.prototype.setpos = function(x,y){
         this.s = new this.P.PVector(x,y);
-        this.x=x;
-        this.y=y;
     }
     Dancer.prototype.incr = function() {
         // start the next move if ready
@@ -69,8 +65,6 @@
         dy = this.vy*dt;
 
         this.s.add( new this.P.PVector(dx,dy) );
-        this.x += dx;
-        this.y += dy;
 
         this.lastincr = now;
 
