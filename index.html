@@ -62,10 +62,9 @@
         now = this.P.millis();
         dt = (now-this.lastincr)/1000; //convert millis to seconds
 
-        dx = this.vx*dt;
-        dy = this.vy*dt;
+        ds = this.P.PVector.mult(this.v,dt)
 
-        this.s.add( new this.P.PVector(dx,dy) );
+        this.s.add( ds );
 
         this.lastincr = now;
 
