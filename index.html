@@ -22,9 +22,9 @@
     function Dancer(x,y,facing,lead,active,P) {
         this.SIZE = 10;
         this.POINTER = 12;
-        this.s = new P.PVector(x,y);
         this.x = x;
         this.y = y;
+        this.s = new P.PVector(x,y);
         this.vx = 0;
         this.vy = 0;
         this.facing = facing;
@@ -40,9 +40,10 @@
         this.stack = [];
     }
     Dancer.prototype.pos = function(){
-        return [this.x,this.y];
+        return [this.s.x,this.s.y];
     }
     Dancer.prototype.setpos = function(x,y){
+        this.s = new this.P.PVector(x,y);
         this.x=x;
         this.y=y;
     }
@@ -59,15 +60,15 @@
         if(this.lastincr==null) {
             this.lastincr = this.P.millis();
             return;
-        }
-
+        }         
+        
         now = this.P.millis();
         dt = (now-this.lastincr)/1000; //convert millis to seconds
 
         dx = this.vx*dt;
         dy = this.vy*dt;
 
-        //this.s = this.s.add( new this.P.PVector(dx,dy) );
+        this.s.add( new this.P.PVector(dx,dy) );
         this.x += dx;
         this.y += dy;
 
@@ -81,8 +82,8 @@
     }
     Dancer.prototype.move = function(pos,beats){
         dt = beats*beatlen;
-        dx = pos[0]-this.x;
-        dy = pos[1]-this.y;
+        dx = pos[0]-this.s.x;
+        dy = pos[1]-this.s.y;
         vx = dx/dt;
         vy = dy/dt;
 
@@ -95,7 +96,7 @@
         this.script.push( {'pos':pos,'beats':beats} )
     }
     Dancer.prototype.push = function(){
-        this.stack.push( [this.x,this.y] );
+        this.stack.push( [this.s.x,this.s.y] );
     }
     Dancer.prototype.pop = function(){
         return this.stack.pop();
@@ -103,10 +104,10 @@
     Dancer.prototype.draw = function() {
         this.P.stroke(0,0,0);
         this.P.strokeWeight(1.5);
-        this.P.line(this.x, 
-                        this.y, 
-                        this.x+this.P.cos(this.facing)*this.POINTER,
-                        this.y-this.P.sin(this.facing)*this.POINTER);
+        this.P.line(this.s.x, 
+                        this.s.y, 
+                        this.s.x+this.P.cos(this.facing)*this.POINTER,
+                        this.s.y-this.P.sin(this.facing)*this.POINTER);
 
         this.P.strokeWeight(1);
         if(this.lead) {
@@ -114,15 +115,15 @@
         } else {
             this.P.fill(255,255,255);
         }
-        this.P.ellipse( this.x, this.y, this.SIZE, this.SIZE );
+        this.P.ellipse( this.s.x, this.s.y, this.SIZE, this.SIZE );
         if(this.active) {
             this.P.fill(0,0,0,0);
-            this.P.ellipse(this.x,this.y,this.SIZE+6,this.SIZE+6);
+            this.P.ellipse(this.s.x,this.s.y,this.SIZE+6,this.SIZE+6);
         }
     }
     Dancer.prototype.face = function(dancer) {
-        dx = dancer.x-this.x;
-        dy = dancer.y-this.y;
+        dx = dancer.s.x-this.s.x;
+        dy = dancer.s.y-this.s.y;
         this.facing = Math.atan2(dy,dx);
     }
     Dancer.prototype.swing = function(dancer,beats){
@@ -138,10 +139,10 @@
     Dancer.prototype.step_forward= function(dancer, beats) {
         this.push();
 
-        dx = dancer.x-this.x;
-        dy = dancer.y-this.y;
-        xp = this.x+dx/4;
-        yp = this.y+dy/4;
+        dx = dancer.s.x-this.s.x;
+        dy = dancer.s.y-this.s.y;
+        xp = this.s.x+dx/4;
+        yp = this.s.y+dy/4;
 
         this.enqueue_move([xp,yp], beats/2);
         this.enqueue_move([xp,yp], beats/2);
