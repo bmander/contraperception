@@ -22,6 +22,7 @@
     function Dancer(x,y,facing,lead,active,P) {
         this.SIZE = 10;
         this.POINTER = 12;
+        this.s = new P.PVector(x,y);
         this.x = x;
         this.y = y;
         this.vx = 0;
@@ -40,6 +41,10 @@
     }
     Dancer.prototype.pos = function(){
         return [this.x,this.y];
+    }
+    Dancer.prototype.setpos = function(x,y){
+        this.x=x;
+        this.y=y;
     }
     Dancer.prototype.incr = function() {
         // start the next move if ready
@@ -62,6 +67,7 @@
         dx = this.vx*dt;
         dy = this.vy*dt;
 
+        //this.s = this.s.add( new this.P.PVector(dx,dy) );
         this.x += dx;
         this.y += dy;
 
@@ -150,23 +156,19 @@
         this.y=y;
         this.width=width;
 
-        activelead.x = this.x-width/2;
-        activelead.y = this.y-width/2;
+        activelead.setpos( this.x-width/2, this.y-width/2 );
         activelead.active = true;
         activelead.lead = true;
 
-        activefollow.x = this.x-width/2;
-        activefollow.y = this.y+width/2;
+        activefollow.setpos( this.x-width/2, this.y+width/2 );
         activefollow.active = true;
         activefollow.lead = false;
 
-        inactivelead.x = this.x+width/2;
-        inactivelead.y = this.y+width/2;
+        inactivelead.setpos(this.x+width/2, this.y+width/2 );
         inactivelead.active = false;
         inactivelead.lead = true;
 
-        inactivefollow.x = this.x+width/2;
-        inactivefollow.y = this.y-width/2;
+        inactivefollow.setpos(this.x+width/2, this.y-width/2);
         inactivefollow.active = false;
         inactivefollow.lead = false;
 
