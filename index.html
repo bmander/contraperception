@@ -24,8 +24,6 @@
         this.POINTER = 12;
         this.s = new P.PVector(x,y);
         this.v = new P.PVector(0,0);
-        this.vx = 0;
-        this.vy = 0;
         this.facing = facing;
         this.lead = lead;
         this.active = active;
@@ -63,28 +61,20 @@
         dt = (now-this.lastincr)/1000; //convert millis to seconds
 
         ds = this.P.PVector.mult(this.v,dt)
-
         this.s.add( ds );
 
         this.lastincr = now;
 
         if(now>this.nextstop){
-            this.vx=0;
-            this.vy=0;
             this.v = new this.P.PVector(0,0);
             this.ready=true;
         }
     }
     Dancer.prototype.move = function(pos,beats){
         dt = beats*beatlen;
-        dx = pos[0]-this.s.x;
-        dy = pos[1]-this.s.y;
-        vx = dx/dt;
-        vy = dy/dt;
-
-        this.vx=vx;
-        this.vy=vy;
-        this.v = new this.P.PVector(vx,vy);
+        ds = this.P.PVector.sub(new this.P.PVector(pos[0],pos[1]),
+                                this.s);
+        this.v = this.P.PVector.div(ds,dt)
 
         this.nextstop = this.P.millis()+dt*1000;
     }
@@ -134,13 +124,12 @@
     Dancer.prototype.step_forward= function(dancer, beats) {
         this.push();
 
-        dx = dancer.s.x-this.s.x;
-        dy = dancer.s.y-this.s.y;
-        xp = this.s.x+dx/4;
-        yp = this.s.y+dy/4;
+        ds = this.P.PVector.sub(dancer.s,this.s)
+        ds.div(4)
+        sp = this.P.PVector.add(this.s,ds)
 
-        this.enqueue_move([xp,yp], beats/2);
-        this.enqueue_move([xp,yp], beats/2);
+        this.enqueue_move([sp.x,sp.y], beats/2);
+        this.enqueue_move([sp.x,sp.y], beats/2);
     }
     Dancer.prototype.step_away = function(pos, beats) {
         this.enqueue_move(pos, beats/2); 
