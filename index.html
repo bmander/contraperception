@@ -36,9 +36,6 @@
         this.script = [];
         this.stack = [];
     }
-    Dancer.prototype.pos = function(){
-        return [this.s.x,this.s.y];
-    }
     Dancer.prototype.setpos = function(x,y){
         this.s = new this.P.PVector(x,y);
     }
@@ -72,7 +69,7 @@
     }
     Dancer.prototype.move = function(pos,beats){
         dt = beats*beatlen;
-        ds = this.P.PVector.sub(new this.P.PVector(pos[0],pos[1]),
+        ds = this.P.PVector.sub(pos,
                                 this.s);
         this.v = this.P.PVector.div(ds,dt)
 
@@ -111,7 +108,7 @@
         //end up with the follow on the right
     }
     Dancer.prototype.balance = function(dancer, beats) {
-        origpos = this.pos();
+        origpos = new this.P.PVector(this.s.x,this.s.y);
         this.step_forward( dancer, beats/2 );
         this.step_away( origpos, beats/2 );
     }
@@ -120,8 +117,8 @@
         ds.div(4)
         sp = this.P.PVector.add(this.s,ds)
 
-        this.enqueue_move([sp.x,sp.y], beats/2);
-        this.enqueue_move([sp.x,sp.y], beats/2);
+        this.enqueue_move(sp, beats/2);
+        this.enqueue_move(sp, beats/2);
     }
     Dancer.prototype.step_away = function(pos, beats) {
         this.enqueue_move(pos, beats/2); 
