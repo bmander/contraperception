@@ -41,7 +41,7 @@
     Dancer.prototype.pos = function(){
         return [this.x,this.y];
     }
-    Dancer.prototype.incr = function(processing) {
+    Dancer.prototype.incr = function() {
         // start the next move if ready
         if(this.ready) {
             if(this.script.length>0){
@@ -94,24 +94,24 @@
     Dancer.prototype.pop = function(){
         return this.stack.pop();
     }
-    Dancer.prototype.draw = function(processing) {
-        processing.stroke(0,0,0);
-        processing.strokeWeight(1.5);
-        processing.line(this.x, 
+    Dancer.prototype.draw = function() {
+        this.P.stroke(0,0,0);
+        this.P.strokeWeight(1.5);
+        this.P.line(this.x, 
                         this.y, 
-                        this.x+processing.cos(this.facing)*this.POINTER,
-                        this.y-processing.sin(this.facing)*this.POINTER);
+                        this.x+this.P.cos(this.facing)*this.POINTER,
+                        this.y-this.P.sin(this.facing)*this.POINTER);
 
-        processing.strokeWeight(1);
+        this.P.strokeWeight(1);
         if(this.lead) {
-            processing.fill(128,128,128);
+            this.P.fill(128,128,128);
         } else {
-            processing.fill(255,255,255);
+            this.P.fill(255,255,255);
         }
-        processing.ellipse( this.x, this.y, this.SIZE, this.SIZE );
+        this.P.ellipse( this.x, this.y, this.SIZE, this.SIZE );
         if(this.active) {
-            processing.fill(0,0,0,0);
-            processing.ellipse(this.x,this.y,this.SIZE+6,this.SIZE+6);
+            this.P.fill(0,0,0,0);
+            this.P.ellipse(this.x,this.y,this.SIZE+6,this.SIZE+6);
         }
     }
     Dancer.prototype.face = function(dancer) {
@@ -175,11 +175,11 @@
         this.inactivelead = inactivelead;
         this.inactivefollow = inactivefollow;
     }
-    Set.prototype.draw = function(processing) {
-        this.activelead.draw(processing);
-        this.activefollow.draw(processing);
-        this.inactivelead.draw(processing);
-        this.inactivefollow.draw(processing);
+    Set.prototype.draw = function() {
+        this.activelead.draw();
+        this.activefollow.draw();
+        this.inactivelead.draw();
+        this.inactivefollow.draw();
     }
     Set.prototype.neighbor = function() {
         this.activelead.face( this.inactivefollow );
@@ -216,12 +216,12 @@
         // erase background
         processing.background(224);
 
-        d1.incr(processing);
-        d2.incr(processing);
-        d3.incr(processing);
-        d4.incr(processing);
+        d1.incr();
+        d2.incr();
+        d3.incr();
+        d4.incr();
 
-        set.draw(processing);
+        set.draw();
       };
       
     }
