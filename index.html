@@ -19,27 +19,44 @@
 
     var beatlen = 60/bpm;
 
-    function Dancer(x,y,bearing,lead,active) {
+    function Dancer(x,y,facing,lead,active,P) {
         this.SIZE = 10;
         this.POINTER = 12;
         this.x = x;
         this.y = y;
         this.vx = 0;
         this.vy = 0;
-        this.bearing = bearing;
+        this.facing = facing;
         this.lead = lead;
         this.active = active;
         this.lastincr=null;
+        this.nextstop=null;
 
+        this.P = P;
+
+        this.ready = true;
+        this.script = [];
         this.stack = [];
     }
+    Dancer.prototype.pos = function(){
+        return [this.x,this.y];
+    }
     Dancer.prototype.incr = function(processing) {
+        // start the next move if ready
+        if(this.ready) {
+            if(this.script.length>0){
+                nextmove = this.script.shift();
+                this.move(nextmove.pos,nextmove.beats);
+                this.ready=false;
+            }
+        }
+
         if(this.lastincr==null) {
-            this.lastincr = processing.millis();
+            this.lastincr = this.P.millis();
             return;
         }
 
-        now = processing.millis();
+        now = this.P.millis();
         dt = (now-this.lastincr)/1000; //convert millis to seconds
 
         dx = this.vx*dt;
@@ -49,6 +66,12 @@
         this.y += dy;
 
         this.lastincr = now;
+
+        if(now>this.nextstop){
+            this.vx=0;
+            this.vy=0;
+            this.ready=true;
+        }
     }
     Dancer.prototype.move = function(pos,beats){
         dt = beats*beatlen;
@@ -59,6 +82,11 @@
 
         this.vx=vx;
         this.vy=vy;
+
+        this.nextstop = this.P.millis()+dt*1000;
+    }
+    Dancer.prototype.enqueue_move = function(pos,beats) {
+        this.script.push( {'pos':pos,'beats':beats} )
     }
     Dancer.prototype.push = function(){
         this.stack.push( [this.x,this.y] );
@@ -71,8 +99,8 @@
         processing.strokeWeight(1.5);
         processing.line(this.x, 
                         this.y, 
-                        this.x+processing.cos(this.bearing)*this.POINTER,
-                        this.y-processing.sin(this.bearing)*this.POINTER);
+                        this.x+processing.cos(this.facing)*this.POINTER,
+                        this.y-processing.sin(this.facing)*this.POINTER);
 
         processing.strokeWeight(1);
         if(this.lead) {
@@ -89,11 +117,17 @@
     Dancer.prototype.face = function(dancer) {
         dx = dancer.x-this.x;
         dy = dancer.y-this.y;
-        this.bearing = Math.atan2(dy,dx);
+        this.facing = Math.atan2(dy,dx);
     }
-    Dancer.prototype.balance = function(dancer) {
-        this.step_toward( dancer );
-        this.step_away( dancer );
+    Dancer.prototype.swing = function(dancer,beats){
+        //draw together
+        //orbit some number of times
+        //end up with the follow on the right
+    }
+    Dancer.prototype.balance = function(dancer, beats) {
+        origpos = this.pos();
+        this.step_forward( dancer, beats/2 );
+        this.step_away( origpos, beats/2 );
     }
     Dancer.prototype.step_forward= function(dancer, beats) {
         this.push();
@@ -103,10 +137,12 @@
         xp = this.x+dx/4;
         yp = this.y+dy/4;
 
-        this.move([xp,yp], beats);
+        this.enqueue_move([xp,yp], beats/2);
+        this.enqueue_move([xp,yp], beats/2);
     }
-    Dancer.prototype.step_away = function(beats) {
-        this.move(this.pop(), beats); 
+    Dancer.prototype.step_away = function(pos, beats) {
+        this.enqueue_move(pos, beats/2); 
+        this.enqueue_move(pos, beats/2);
     }
 
     function Set(x,y,width,activelead,activefollow,inactivelead,inactivefollow) {
@@ -145,11 +181,19 @@
         this.inactivelead.draw(processing);
         this.inactivefollow.draw(processing);
     }
-    Set.prototype.neighbor = function(processing) {
+    Set.prototype.neighbor = function() {
         this.activelead.face( this.inactivefollow );
         this.inactivefollow.face( this.activelead );
         this.activefollow.face( this.inactivelead );
         this.inactivelead.face( this.activefollow );
+    }
+    Set.prototype.neighbor_balance = function(beats) {
+        this.neighbor();
+
+        this.activelead.balance(this.inactivefollow, beats);
+        this.inactivefollow.balance(this.activelead, beats);
+        this.activefollow.balance(this.inactivelead, beats);
+        this.inactivelead.balance(this.activefollow, beats);
     }
 
     // Simple way to attach js code to the canvas is by using a function
@@ -159,10 +203,10 @@
 
             centerX = processing.width / 2, centerY = processing.height / 2;
 
-            d1 = new Dancer(0,0,0,false,false);
-            d2 = new Dancer(0,0,0,false,false);
-            d3 = new Dancer(0,0,0,false,false);
-            d4 = new Dancer(0,0,0,false,false);
+            d1 = new Dancer(0,0,0,false,false,processing);
+            d2 = new Dancer(0,0,0,false,false,processing);
+            d3 = new Dancer(0,0,0,false,false,processing);
+            d4 = new Dancer(0,0,0,false,false,processing);
 
             set = new Set(centerX, centerY, 30, d1, d2, d3, d4);
         }
