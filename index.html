@@ -23,6 +23,7 @@
         this.SIZE = 10;
         this.POINTER = 12;
         this.s = new P.PVector(x,y);
+        this.v = new P.PVector(0,0);
         this.vx = 0;
         this.vy = 0;
         this.facing = facing;
@@ -71,6 +72,7 @@
         if(now>this.nextstop){
             this.vx=0;
             this.vy=0;
+            this.v = new this.P.PVector(0,0);
             this.ready=true;
         }
     }
@@ -83,6 +85,7 @@
 
         this.vx=vx;
         this.vy=vy;
+        this.v = new this.P.PVector(vx,vy);
 
         this.nextstop = this.P.millis()+dt*1000;
     }
