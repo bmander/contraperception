@@ -23,7 +23,8 @@
         this.SIZE = 10;
         this.POINTER = 12;
         this.s = new P.PVector(x,y);
-        this.v = new P.PVector(0,0);
+        this.magv = 0;
+        this.target = null;
         this.facing = facing;
         this.lead = lead;
         this.active = active;
@@ -53,17 +54,25 @@
             this.lastincr = this.P.millis();
             return;
         }         
-        
+       
         now = this.P.millis();
-        dt = (now-this.lastincr)/1000; //convert millis to seconds
 
-        ds = this.P.PVector.mult(this.v,dt)
-        this.s.add( ds );
+        if(this.target!=null){
+            dt = (now-this.lastincr)/1000; //convert millis to seconds
+
+            dir = this.P.PVector.sub(this.target,this.s);
+            dir.normalize();
+            v = this.P.PVector.mult(dir,this.magv);
+
+            ds = this.P.PVector.mult(v,dt)
+            this.s.add( ds );
+        }
 
         this.lastincr = now;
 
         if(now>this.nextstop){
-            this.v = new this.P.PVector(0,0);
+            this.magv=0;
+            this.target=null;
             this.ready=true;
         }
     }
@@ -71,7 +80,8 @@
         dt = beats*beatlen;
         ds = this.P.PVector.sub(pos,
                                 this.s);
-        this.v = this.P.PVector.div(ds,dt)
+        this.magv = ds.mag()/dt;
+        this.target = pos;
 
         this.nextstop = this.P.millis()+dt*1000;
     }
