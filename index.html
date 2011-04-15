@@ -116,9 +116,8 @@
         }
     }
     Dancer.prototype.face = function(dancer) {
-        dx = dancer.s.x-this.s.x;
-        dy = dancer.s.y-this.s.y;
-        this.facing = Math.atan2(dy,dx);
+        vv = this.P.PVector.sub(dancer.s,this.s)
+        this.facing = Math.atan2(vv.y,vv.x);
     }
     Dancer.prototype.swing = function(dancer,beats){
         //draw together
