@@ -106,6 +106,19 @@
 
         this.nextstop = this.P.millis()+dt*1000;
     }
+    Dancer.prototype.turn = function(axis,dir,places,beats) {
+        dt = beats*beatlen
+        dtheta = places*(this.P.HALF_PI)
+        if(dir==="right"){
+            dtheta = -dtheta;
+        }
+
+        this.magomega = dtheta/dt;
+        this.axis = axis;
+
+        this.nextangstop = this.P.millis()+dt*1000;
+
+    }
     Dancer.prototype.enqueue_move = function(pos,beats) {
         this.script.push( {'type':'move', 'pos':pos,'beats':beats} )
     }
