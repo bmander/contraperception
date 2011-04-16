@@ -27,6 +27,9 @@
         this.magv = 0;
         this.target = null;
 
+        this.magomega = 0;
+        this.axis = null;
+
         this.facing = facing;
 
         this.lead = lead;
@@ -34,6 +37,7 @@
 
         this.lastincr=null;
         this.nextstop=null;
+        this.angnextstop=null;
 
         this.P = P;
 
@@ -46,7 +50,7 @@
     Dancer.prototype.incr = function() {
         // start the next move if ready
         if(this.target==null) {
-            if(this.script.length>0){
+            if(this.script.length>0 && this.script[0].type=='move'){
                 nextmove = this.script.shift();
                 this.move(nextmove.pos,nextmove.beats);
             }
@@ -58,9 +62,9 @@
         }         
        
         now = this.P.millis();
+        dt = (now-this.lastincr)/1000; //convert millis to seconds
 
         if(this.target!=null){
-            dt = (now-this.lastincr)/1000; //convert millis to seconds
 
             dir = this.P.PVector.sub(this.target,this.s);
             dir.normalize();
@@ -70,11 +74,27 @@
             this.s.add( ds );
         }
 
+        if(this.axis!=null) {
+            dtheta = this.magomega*dt;
+            // take the vector from axis to position
+            radius = this.P.PVector.sub(this.s, this.axis);
+            // rotate it by dtheta
+            xp = radius.x*Math.cos(dtheta)-radius.y*Math.sin(dtheta);
+            yp = radius.x*Math.sin(dtheta)+radius.y*Math.cos(dtheta);
+            radiusp = new this.P.PVector(xp,yp);
+            // put the dancer at the sum of the axis and the resultant vector
+            this.s = this.P.PVector.add(this.axis,radiusp);
+        }
+
         this.lastincr = now;
 
         if(now>this.nextstop){
             this.magv=0;
             this.target=null;
+        }
+        if(now>this.nextangstop){
+            this.magomega=0;
+            this.axis=null;
         }
     }
     Dancer.prototype.move = function(pos,beats){
@@ -87,7 +107,7 @@
         this.nextstop = this.P.millis()+dt*1000;
     }
     Dancer.prototype.enqueue_move = function(pos,beats) {
-        this.script.push( {'pos':pos,'beats':beats} )
+        this.script.push( {'type':'move', 'pos':pos,'beats':beats} )
     }
     Dancer.prototype.draw = function() {
         this.P.stroke(0,0,0);
