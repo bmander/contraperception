@@ -37,7 +37,6 @@
 
         this.P = P;
 
-        this.ready = true;
         this.script = [];
         this.stack = [];
     }
@@ -46,11 +45,10 @@
     }
     Dancer.prototype.incr = function() {
         // start the next move if ready
-        if(this.ready) {
+        if(this.target==null) {
             if(this.script.length>0){
                 nextmove = this.script.shift();
                 this.move(nextmove.pos,nextmove.beats);
-                this.ready=false;
             }
         }
 
@@ -77,7 +75,6 @@
         if(now>this.nextstop){
             this.magv=0;
             this.target=null;
-            this.ready=true;
         }
     }
     Dancer.prototype.move = function(pos,beats){
