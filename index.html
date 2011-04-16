@@ -57,6 +57,13 @@
                 this.move(nextmove.pos,nextmove.beats);
             }
         }
+        // start the next turn if it's ready
+        if(this.axis==null) {
+            if(this.script.length>0 && this.script[0].type=='turn'){
+                nextturn = this.script.shift();
+                this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
+            }
+        }
 
         if(this.lastincr==null) {
             this.lastincr = this.P.millis();
@@ -125,7 +132,10 @@
         this.thetap = dtheta;
     }
     Dancer.prototype.enqueue_move = function(pos,beats) {
-        this.script.push( {'type':'move', 'pos':pos,'beats':beats} )
+        this.script.push( {'type':'move', 'pos':pos,'beats':beats} );
+    }
+    Dancer.prototype.enqueue_turn = function(axis,dir,places,beats) {
+        this.script.push( {'type':'turn', 'axis':axis, 'dir':dir, 'places':places, 'beats':beats} );
     }
     Dancer.prototype.draw = function() {
         this.P.stroke(0,0,0);
