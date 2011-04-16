@@ -24,6 +24,7 @@
         this.POINTER = 12;
         this.s = new P.PVector(x,y);
 
+        this.dp = null;
         this.magv = 0;
         this.target = null;
 
@@ -37,8 +38,8 @@
         this.active = active;
 
         this.lastincr=null;
-        this.nextstop=null;
 
+        this.d = null;
         this.theta = null;
 
         this.P = P;
@@ -80,6 +81,7 @@
             v = this.P.PVector.mult(dir,this.magv);
 
             ds = this.P.PVector.mult(v,dt)
+            this.d += ds.mag();
             this.s.add( ds );
         }
 
@@ -98,8 +100,10 @@
 
         this.lastincr = now;
 
-        if(now>this.nextstop){
+        if(this.P.abs(this.d)>=this.P.abs(this.dp)){
             this.magv=0;
+            this.d=0;
+            this.dp=null;
             this.target=null;
         }
         if(this.P.abs(this.theta)>=this.P.abs(this.thetap)){
@@ -116,7 +120,7 @@
         this.magv = ds.mag()/dt;
         this.target = pos;
 
-        this.nextstop = this.P.millis()+dt*1000;
+        this.dp = ds.mag();
     }
     Dancer.prototype.turn = function(axis,dir,places,beats) {
         dt = beats*beatlen
@@ -162,7 +166,12 @@
         this.facing = Math.atan2(vv.y,vv.x);
     }
     Dancer.prototype.swing = function(dancer,beats){
-        //draw together
+        //find center
+        //c = this.P.PVector.add(this.s,dancer.s)
+        //c.div(2);
+        //draw together - move halfway to center
+        //bb = this.P.PVector
+
         //orbit some number of times
         //end up with the follow on the right
     }
