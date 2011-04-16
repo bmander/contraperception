@@ -27,6 +27,7 @@
         this.magv = 0;
         this.target = null;
 
+        this.thetap=null;
         this.magomega = 0;
         this.axis = null;
 
@@ -37,7 +38,8 @@
 
         this.lastincr=null;
         this.nextstop=null;
-        this.angnextstop=null;
+
+        this.theta = null;
 
         this.P = P;
 
@@ -76,6 +78,7 @@
 
         if(this.axis!=null) {
             dtheta = this.magomega*dt;
+            this.theta += dtheta;
             // take the vector from axis to position
             radius = this.P.PVector.sub(this.s, this.axis);
             // rotate it by dtheta
@@ -92,8 +95,10 @@
             this.magv=0;
             this.target=null;
         }
-        if(now>this.nextangstop){
+        if(this.P.abs(this.theta)>=this.P.abs(this.thetap)){
             this.magomega=0;
+            this.theta=0;
+            this.thetap=null;
             this.axis=null;
         }
     }
@@ -116,8 +121,8 @@
         this.magomega = dtheta/dt;
         this.axis = axis;
 
-        this.nextangstop = this.P.millis()+dt*1000;
-
+        this.theta = 0;
+        this.thetap = dtheta;
     }
     Dancer.prototype.enqueue_move = function(pos,beats) {
         this.script.push( {'type':'move', 'pos':pos,'beats':beats} )
