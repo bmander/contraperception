@@ -4,8 +4,26 @@
 </head>
 <h1>Contra Perception</h1>
 <p><canvas id="canvas1" width="400" height="400"></canvas></p>
+<p id="moves"></p>
 
 <script id="script1" type="text/javascript">
+    var movesp = document.getElementById("moves")
+    function moveToString(move) {
+        ret = "";
+        if(move.type=="move"){
+            return "[move->("+move.pos.x+","+move.pos.y+") in "+move.beats+"]";
+        }else{
+            return "[turn]";
+        }
+
+    }
+    function printscript(script) {
+        moves.innerHTML="";
+        for(var i=0; i<script.length; i++){
+            var move = script[i];
+            movesp.innerHTML += moveToString(move)+"</br>";
+        }
+    }
 
     var dancer;
     var centerX;
@@ -56,6 +74,8 @@
             if(this.script.length>0 && this.script[0].type=='move'){
                 nextmove = this.script.shift();
                 this.move(nextmove.pos,nextmove.beats);
+
+                printscript(this.script);
             }
         }
         // start the next turn if it's ready
@@ -277,7 +297,4 @@
 
     // p.exit(); to detach it
 </script>
-
-<div style="height:0px;width:0px;overflow:hidden;"></div>
-
 
