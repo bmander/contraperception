@@ -5,6 +5,8 @@
 <h1>Contra Perception</h1>
 <p><canvas id="canvas1" width="400" height="400"></canvas></p>
 <p id="moves"></p>
+<p>target</p>
+<p id="target"></p>
 
 <script id="script1" type="text/javascript">
     var movesp = document.getElementById("moves")
@@ -12,18 +14,23 @@
         ret = "";
         if(move.type=="move"){
             return "[move->("+move.pos.x+","+move.pos.y+") in "+move.beats+"]";
-        }else{
+        } else if(move.type=="rest") {
+			return "[rest "+move.beats+"]";
+		} else {
             return "[turn]";
         }
 
     }
-    function printscript(script) {
-        moves.innerHTML="";
-        for(var i=0; i<script.length; i++){
-            var move = script[i];
+    function printscript(moves) {
+        movesp.innerHTML="";
+        for(var i=0; i<moves.length; i++){
+            var move = moves[i];
             movesp.innerHTML += moveToString(move)+"</br>";
         }
     }
+	function settarget(str) {
+		document.getElementById("target").innerHTML = str;
+	}
 
     var dancer;
     var centerX;
@@ -56,32 +63,40 @@
         this.active = active;
 
         this.lastincr=null;
+		
+		this.nextmove=0;
+		this.nextturn=0;
 
         this.d = null;
         this.theta = null;
 
         this.P = P;
 
-        this.script = [];
+        this.moves = [];
+		this.turns = [];
         this.stack = [];
+		
+		this.onmovechange = null;
     }
     Dancer.prototype.setpos = function(x,y){
         this.s = new this.P.PVector(x,y);
     }
     Dancer.prototype.incr = function() {
+		var time = this.P.millis();
+	
         // start the next move if ready
-        if(this.target==null) {
-            if(this.script.length>0 && this.script[0].type=='move'){
-                nextmove = this.script.shift();
-                this.move(nextmove.pos,nextmove.beats);
-
-                printscript(this.script);
+        if(time>this.nextmove && this.target==null) {
+            if(this.moves.length>0){
+                var nextmove = this.moves.shift();
+                this.move(nextmove);
+				
+				if(this.onmovechange){this.onmovechange();}
             }
         }
         // start the next turn if it's ready
-        if(this.axis==null) {
-            if(this.script.length>0 && this.script[0].type=='turn'){
-                nextturn = this.script.shift();
+        if(time>this.nextturn && this.axis==null) {
+            if(this.turns.length>0){
+                nextturn = this.turns.shift();
                 this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
             }
         }
@@ -125,6 +140,8 @@
             this.d=0;
             this.dp=null;
             this.target=null;
+			
+			settarget(this.target);
         }
         if(this.P.abs(this.theta)>=this.P.abs(this.thetap)){
             this.magomega=0;
@@ -133,14 +150,22 @@
             this.axis=null;
         }
     }
-    Dancer.prototype.move = function(pos,beats){
-        dt = beats*beatlen;
-        ds = this.P.PVector.sub(pos,
+    Dancer.prototype.move = function(move){
+
+        dt = move.beats*beatlen;
+		
+		if(move.type=='rest'){
+			this.nextmove = this.P.millis()+dt*1000;
+			return;
+		}
+		
+        ds = this.P.PVector.sub(move.pos,
                                 this.s);
         this.magv = ds.mag()/dt;
-        this.target = pos;
+        this.target = move.pos;
+		settarget(this.target);
 
-        this.dp = ds.mag();
+        this.dp = move.dist;
     }
     Dancer.prototype.turn = function(axis,dir,places,beats) {
         dt = beats*beatlen
@@ -155,12 +180,18 @@
         this.theta = 0;
         this.thetap = dtheta;
     }
-    Dancer.prototype.enqueue_move = function(pos,beats) {
-        this.script.push( {'type':'move', 'pos':pos,'beats':beats} );
+    Dancer.prototype.enqueue_move = function(pos,dist,beats) {
+        this.moves.push( {'type':'move', 'pos':pos,'dist':dist,'beats':beats} );
     }
+	Dancer.prototype.enqueue_move_rest = function(beats) {
+		this.moves.push( {'type':'rest', 'beats':beats } );
+	}
     Dancer.prototype.enqueue_turn = function(axis,dir,places,beats) {
-        this.script.push( {'type':'turn', 'axis':axis, 'dir':dir, 'places':places, 'beats':beats} );
+        this.turns.push( {'type':'turn', 'axis':axis, 'dir':dir, 'places':places, 'beats':beats} );
     }
+	Dancer.prototype.enqueue_turn_rest = function(beats) {
+		this.turns.push( {'type':'rest', 'beats':beats } );
+	}
     Dancer.prototype.draw = function() {
         this.P.stroke(0,0,0);
         this.P.strokeWeight(1.5);
@@ -201,16 +232,21 @@
         this.step_away( origpos, beats/2 );
     }
     Dancer.prototype.step_forward= function(dancer, beats) {
-        ds = this.P.PVector.sub(dancer.s,this.s)
-        ds.div(4)
-        sp = this.P.PVector.add(this.s,ds)
+        var ds = this.P.PVector.sub(dancer.s,this.s);
+        ds.div(4);
+        var sp = this.P.PVector.add(this.s,ds);
+		
+		var dist = ds.mag();
 
-        this.enqueue_move(sp, beats/2);
-        this.enqueue_move(sp, beats/2);
+        this.enqueue_move(sp, dist, beats/2);
+        this.enqueue_move_rest(beats/2);
     }
     Dancer.prototype.step_away = function(pos, beats) {
-        this.enqueue_move(pos, beats/2); 
-        this.enqueue_move(pos, beats/2);
+		var ds = this.P.PVector.sub(this.s,pos);
+		var dist = ds.mag();
+	
+        this.enqueue_move(pos, dist, beats/2); 
+        this.enqueue_move_rest(beats/2);
     }
 
     function Set(x,y,width,activelead,activefollow,inactivelead,inactivefollow) {
@@ -271,6 +307,8 @@
             d2 = new Dancer(0,0,0,false,false,processing);
             d3 = new Dancer(0,0,0,false,false,processing);
             d4 = new Dancer(0,0,0,false,false,processing);
+			
+			d1.onmovechange = function(){printscript(this.moves);};
 
             set = new Set(centerX, centerY, 30, d1, d2, d3, d4);
         }
