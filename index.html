@@ -4,12 +4,33 @@
 </head>
 <h1>Contra Perception</h1>
 <p><canvas id="canvas1" width="400" height="400"></canvas></p>
-<p id="moves"></p>
-<p>target</p>
-<p id="target"></p>
+<table border=1>
+<tr>
+  <td>
+    <p>target</p>
+    <p id="target"></p>
+  </td>
+  <td>
+    <p>turn</p>
+    <p id="turn"></p>
+  </td>
+</tr>
+<tr>
+  <td>
+    <p>moves</p>
+    <p id="moves"></p>
+  </td>
+  <td>
+    <p>turn</p>
+    <p id="turns"></p>
+  </td>
+</tr>
+</table>
 
 <script id="script1" type="text/javascript">
-    var movesp = document.getElementById("moves")
+    var movesp = document.getElementById("moves");
+    var turnsp = document.getElementById("turns");
+    var turnp = document.getElementById("turn");
     function moveToString(move) {
         ret = "";
         if(move.type=="move"){
@@ -36,6 +57,13 @@
             targetdiv.innerHTML = str;
         }
 	}
+    function setturn(str) {
+        if( str==null ) {
+            turnp.innerHTML = "null";
+        } else {
+            turnp.innerHTML = str;
+        }
+    }
 
     var dancer;
     var centerX;
@@ -126,13 +154,18 @@
     }
 
     Dancer.prototype.angular_incr = function(time, dt) {
+        // check if we're under hold
+        if(time < this.nextturn) {
+            setturn("hold");
+            return;
+        }
 
         // start the next turn if it's ready
-        if(time>this.nextturn && this.axis==null) {
-            if(this.turns.length>0){
-                nextturn = this.turns.shift();
-                this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
-            }
+        if(this.axis==null && this.turns.length>0) {
+            nextturn = this.turns.shift();
+            this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
+
+            if(this.onturnchange){this.onturnchange();}
         }
 
         if(this.axis!=null) {
@@ -160,15 +193,12 @@
     Dancer.prototype.incr = function() {
 		var time = this.P.millis();
 
-        if(this.lastincr==null) {
-            this.lastincr = time;
-            return;
-        }         
-	
-        dt = (time-this.lastincr)/1000; //convert millis to seconds
+        if( this.lastincr!=null ) {
+            dt = (time-this.lastincr)/1000; //convert millis to seconds
 
-        this.linear_incr(time, dt);
-        this.angular_incr(time, dt);
+            this.linear_incr(time, dt);
+            this.angular_incr(time, dt);
+        }
 
         this.lastincr = time;
 
