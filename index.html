@@ -182,9 +182,7 @@
 			return;
 		}
 		
-        ds = this.P.PVector.sub(move.pos,
-                                this.s);
-        this.magv = ds.mag()/dt;
+        this.magv = move.dist/dt;
         this.target = move.pos;
 		settarget(this.target);
 
@@ -250,24 +248,14 @@
         //end up with the follow on the right
     }
     Dancer.prototype.balance = function(dancer, beats) {
-        origpos = new this.P.PVector(this.s.x,this.s.y);
-
         var ds = this.P.PVector.sub(dancer.s,this.s);
         ds.div(4);
-        var sp = this.P.PVector.add(this.s,ds);
-		
 		var dist = ds.mag();
 
-        this.step_forward( sp, dist, beats/2 );
-        this.step_away( origpos, dist, beats/2 );
-    }
-    Dancer.prototype.step_forward= function(sp, dist, beats) {
-        this.enqueue_move(sp, dist, beats/2);
-        this.enqueue_move_rest(beats/2);
-    }
-    Dancer.prototype.step_away = function(pos, dist, beats) {
-        this.enqueue_move(pos, dist, beats/2); 
-        this.enqueue_move_rest(beats/2);
+        this.enqueue_move(dancer.s, dist, beats/4);
+        this.enqueue_move_rest(beats/4);
+        this.enqueue_move(dancer.s, -dist, beats/4);
+        this.enqueue_move_rest(beats/4);
     }
 
     function Set(x,y,width,activelead,activefollow,inactivelead,inactivefollow) {
