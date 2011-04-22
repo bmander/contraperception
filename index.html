@@ -13,7 +13,7 @@
     function moveToString(move) {
         ret = "";
         if(move.type=="move"){
-            return "[move->("+move.pos.x+","+move.pos.y+") in "+move.beats+"]";
+            return "[move-"+move.dist+"->("+move.pos.x+","+move.pos.y+") in "+move.beats+"]";
         } else if(move.type=="rest") {
 			return "[rest "+move.beats+"]";
 		} else {
@@ -45,69 +45,58 @@
     var beatlen = 60/bpm;
 
     function Dancer(x,y,facing,lead,active,P) {
+        this.P = P;             // processing environment
+
         this.SIZE = 10;
         this.POINTER = 12;
-        this.s = new P.PVector(x,y);
+        this.lead = lead;       // is this the lead in the couple?
+        this.active = active;   // is this in the active couple in the set?
 
-        this.dp = null;
-        this.magv = 0;
-        this.target = null;
+        this.facing = facing;   // angle the pointer is pointing
 
-        this.thetap=null;
-        this.magomega = 0;
-        this.axis = null;
+        this.s = new P.PVector(x,y); // position vector
 
-        this.facing = facing;
+        // definition of linear movement
+        this.dp = null;         // the distance we want to move
+        this.magv = 0;          // magnitude of velocity
+        this.target = null;     // place it's headed
 
-        this.lead = lead;
-        this.active = active;
+        // definition of angular movement
+        this.thetap=null;       // the angle we want to sweep 
+        this.magomega = 0;      // magnitude of angular velocity
+        this.axis = null;       // axis it's moving around
 
-        this.lastincr=null;
+        this.lastincr=null;     // the time the last time the state of this thing was inspected
+	
+        // holds
+		this.nextmove=0;        // the time in the future when we're allowed to move again
+		this.nextturn=0;        // the time in the future when we're allowed to turn again
+
+        // state with respect to goals
+        this.d = null;          // the distance moved so far
+        this.theta = null;      // the angle swept so far
+
+        this.moves = [];        // move script
+		this.turns = [];        // turn script
 		
-		this.nextmove=0;
-		this.nextturn=0;
-
-        this.d = null;
-        this.theta = null;
-
-        this.P = P;
-
-        this.moves = [];
-		this.turns = [];
-        this.stack = [];
-		
-		this.onmovechange = null;
+		this.onmovechange = null;   //callback
     }
     Dancer.prototype.setpos = function(x,y){
         this.s = new this.P.PVector(x,y);
     }
-    Dancer.prototype.incr = function() {
-		var time = this.P.millis();
-	
-        // start the next move if ready
-        if(time>this.nextmove && this.target==null) {
-            if(this.moves.length>0){
-                var nextmove = this.moves.shift();
-                this.move(nextmove);
-				
-				if(this.onmovechange){this.onmovechange();}
-            }
-        }
-        // start the next turn if it's ready
-        if(time>this.nextturn && this.axis==null) {
-            if(this.turns.length>0){
-                nextturn = this.turns.shift();
-                this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
-            }
+    Dancer.prototype.linear_incr = function(time, dt) {
+        // check if we're under a hold
+        if(time < this.nextmove) {
+            return;
         }
 
-        if(this.lastincr==null) {
-            this.lastincr = this.P.millis();
-            return;
-        }         
-       
-        now = this.P.millis();
-        dt = (now-this.lastincr)/1000; //convert millis to seconds
+        // start the next move if ready
+        if(this.target==null && this.moves.length>0) {
+            var nextmove = this.moves.shift();
+            this.move(nextmove);
+            
+            if(this.onmovechange){this.onmovechange();}
+        }
 
         if(this.target!=null){
 
@@ -118,6 +107,26 @@
             ds = this.P.PVector.mult(v,dt)
             this.d += ds.mag();
             this.s.add( ds );
+        }
+
+        if(this.P.abs(this.d)>=this.P.abs(this.dp)){
+            this.magv=0;
+            this.d=0;
+            this.dp=null;
+            this.target=null;
+			
+			settarget(this.target);
+        }
+    }
+
+    Dancer.prototype.angular_incr = function(time, dt) {
+
+        // start the next turn if it's ready
+        if(time>this.nextturn && this.axis==null) {
+            if(this.turns.length>0){
+                nextturn = this.turns.shift();
+                this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
+            }
         }
 
         if(this.axis!=null) {
@@ -133,22 +142,30 @@
             this.s = this.P.PVector.add(this.axis,radiusp);
         }
 
-        this.lastincr = now;
-
-        if(this.P.abs(this.d)>=this.P.abs(this.dp)){
-            this.magv=0;
-            this.d=0;
-            this.dp=null;
-            this.target=null;
-			
-			settarget(this.target);
-        }
         if(this.P.abs(this.theta)>=this.P.abs(this.thetap)){
             this.magomega=0;
             this.theta=0;
             this.thetap=null;
             this.axis=null;
         }
+
+    }
+
+    Dancer.prototype.incr = function() {
+		var time = this.P.millis();
+
+        if(this.lastincr==null) {
+            this.lastincr = time;
+            return;
+        }         
+	
+        dt = (time-this.lastincr)/1000; //convert millis to seconds
+
+        this.linear_incr(time, dt);
+        this.angular_incr(time, dt);
+
+        this.lastincr = time;
+
     }
     Dancer.prototype.move = function(move){
 
@@ -244,6 +261,7 @@
     Dancer.prototype.step_away = function(pos, beats) {
 		var ds = this.P.PVector.sub(this.s,pos);
 		var dist = ds.mag();
+        console.log( "step away dist %s", dist );
 	
         this.enqueue_move(pos, dist, beats/2); 
         this.enqueue_move_rest(beats/2);
@@ -308,7 +326,15 @@
             d3 = new Dancer(0,0,0,false,false,processing);
             d4 = new Dancer(0,0,0,false,false,processing);
 			
-			d1.onmovechange = function(){printscript(this.moves);};
+			d1.onmovechange = function(){
+                printscript(this.moves);
+                console.log( this.s.array() );
+                if(this.target != null)
+                    console.log( this.target.array() );
+                else
+                    console.log( this.target );
+                console.log( this.dp );
+            };
 
             set = new Set(centerX, centerY, 30, d1, d2, d3, d4);
         }
