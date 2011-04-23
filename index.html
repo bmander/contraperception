@@ -42,11 +42,26 @@
         }
 
     }
+    function turnToString(turn) {
+        ret = "";
+        if(turn.type=="turn"){
+            return "[turn "+turn.dir+" "+turn.places+" places about "+turn.axis+" "+turn.beats+"]";
+        } else {
+            return "[turn]";
+        }
+    }
     function printscript(moves) {
         movesp.innerHTML="";
         for(var i=0; i<moves.length; i++){
             var move = moves[i];
             movesp.innerHTML += moveToString(move)+"</br>";
+        }
+    }
+    function printturnscript(turns) {
+        turnsp.innerHTML="";
+        for(var i=0; i<turns.length; i++){
+            var turn = turns[i];
+            turnsp.innerHTML += turnToString(turn)+"</br>";
         }
     }
 	function settarget(str) {
@@ -113,6 +128,7 @@
 		this.turns = [];        // turn script
 		
 		this.onmovechange = null;   //callback
+        this.onturnchange = null;   //callback
     }
     Dancer.prototype.setpos = function(x,y){
         this.s = new this.P.PVector(x,y);
@@ -233,15 +249,19 @@
     }
     Dancer.prototype.enqueue_move = function(pos,dist,beats) {
         this.moves.push( {'type':'move', 'pos':pos,'dist':dist,'beats':beats} );
+        if(this.onmovechange){this.onmovechange();}
     }
 	Dancer.prototype.enqueue_move_rest = function(beats) {
 		this.moves.push( {'type':'rest', 'beats':beats } );
+        if(this.onmovechange){this.onmovechange();}
 	}
     Dancer.prototype.enqueue_turn = function(axis,dir,places,beats) {
         this.turns.push( {'type':'turn', 'axis':axis, 'dir':dir, 'places':places, 'beats':beats} );
+        if(this.onturnchange){this.onturnchange();}
     }
 	Dancer.prototype.enqueue_turn_rest = function(beats) {
 		this.turns.push( {'type':'rest', 'beats':beats } );
+        if(this.onturnchange){this.onturnchange();}
 	}
     Dancer.prototype.draw = function() {
         this.P.stroke(0,0,0);
@@ -350,6 +370,9 @@
 			d1.onmovechange = function(){
                 printscript(this.moves);
             };
+            d1.onturnchange = function(){
+                printturnscript(this.turns);
+            }
 
             set = new Set(centerX, centerY, 30, d1, d2, d3, d4);
         }
