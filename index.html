@@ -46,8 +46,8 @@
         ret = "";
         if(turn.type=="turn"){
             return "[turn "+turn.dir+" "+turn.places+" places about "+turn.axis+" "+turn.beats+"]";
-        } else {
-            return "[turn]";
+        } else if (turn.type=="rest"){
+            return "[rest "+turn.beats+"]";
         }
     }
     function printscript(moves) {
@@ -171,14 +171,19 @@
     Dancer.prototype.angular_incr = function(time, dt) {
         // check if we're under hold
         if(time < this.nextturn) {
-            setturn("hold");
+            printturn("hold");
             return;
         }
 
         // start the next turn if it's ready
         if(this.axis==null && this.turns.length>0) {
-            nextturn = this.turns.shift();
-            this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
+            var nextturn = this.turns.shift();
+            if(nextturn.type=="rest") {
+                var dt = nextturn.beats*beatlen;
+			    this.nextturn = this.P.millis()+dt*1000;
+            } else {
+                this.turn(nextturn.axis,nextturn.dir,nextturn.places,nextturn.beats);
+            }
 
             if(this.onturnchange){this.onturnchange();}
         }
