@@ -77,11 +77,17 @@
             movep.innerHTML = "none";
         }
 	}
-    function printturn(dancer) {
-        if(dancer.axis == null)
-            turnp.innerHTML = "null";
-        else
-            turnp.innerHTML = dancer.axis;
+    function turninfo(dancer) {
+        var tt = dancer.P.millis();
+
+        if(dancer.axis == null) {
+            turnp.innerHTML = "none";
+        } else if(tt<dancer.nextturn) {
+            var remaining = dancer.nextturn-tt;
+            movep.innerHTML = "rest "+remaining.toFixed(2);
+        } else {
+            turnp.innerHTML = dancer.magomega.toFixed(2)+" "+dancer.theta.toFixed(2)+"/"+dancer.thetap.toFixed(2)+" "+dancer.axis;
+        }
     }
 
     var dancer;
@@ -173,7 +179,6 @@
     Dancer.prototype.angular_incr = function(time, dt) {
         // check if we're under hold
         if(time < this.nextturn) {
-            printturn("hold");
             return;
         }
 
@@ -191,14 +196,18 @@
         }
 
         if(this.axis!=null) {
-            dtheta = this.magomega*dt;
+            console.log("%s * %s =", this.magomega, dt);
+            var dtheta = this.magomega*dt;
+            console.log("%s", dtheta );
+            console.log("%s + %s =", this.theta, dtheta);
             this.theta += dtheta;
+            console.log("%s", this.theta);
             // take the vector from axis to position
-            radius = this.P.PVector.sub(this.s, this.axis);
+            var radius = this.P.PVector.sub(this.s, this.axis);
             // rotate it by dtheta
-            xp = radius.x*Math.cos(dtheta)-radius.y*Math.sin(dtheta);
-            yp = radius.x*Math.sin(dtheta)+radius.y*Math.cos(dtheta);
-            radiusp = new this.P.PVector(xp,yp);
+            var xp = radius.x*Math.cos(dtheta)-radius.y*Math.sin(dtheta);
+            var yp = radius.x*Math.sin(dtheta)+radius.y*Math.cos(dtheta);
+            var radiusp = new this.P.PVector(xp,yp);
             // put the dancer at the sum of the axis and the resultant vector
             this.s = this.P.PVector.add(this.axis,radiusp);
         }
@@ -218,7 +227,7 @@
 		var time = this.P.millis();
 
         if( this.lastincr!=null ) {
-            dt = (time-this.lastincr)/1000; //convert millis to seconds
+            var dt = (time-this.lastincr)/1000; //convert millis to seconds
 
             this.linear_incr(time, dt);
             this.angular_incr(time, dt);
@@ -242,6 +251,8 @@
         this.dp = move.dist;
     }
     Dancer.prototype.turn = function(axis,dir,places,beats) {
+        console.log( "axis:%s dir:%s places:%s beats:%s", axis, dir, places, beats );
+
         dt = beats*beatlen
         dtheta = places*(this.P.HALF_PI)
         if(dir==="right"){
@@ -372,7 +383,7 @@
     function sketchProc(processing) {
         processing.setup = function() {
             processing.size( 400,400 );
-            processing.frameRate(4);
+            processing.frameRate(2);
 
             centerX = processing.width / 2, centerY = processing.height / 2;
 
@@ -385,7 +396,6 @@
                 printscript(this.moves);
             };
             d1.onturnchange = function(){
-                printturn(this);
                 printturnscript(this.turns);
             }
 
@@ -398,6 +408,7 @@
         processing.background(224);
 
         moveinfo(d1);
+        turninfo(d1);
 
         d1.incr();
         d2.incr();
