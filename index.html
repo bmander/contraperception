@@ -72,12 +72,11 @@
             targetdiv.innerHTML = str;
         }
 	}
-    function setturn(str) {
-        if( str==null ) {
+    function printturn(dancer) {
+        if(dancer.axis == null)
             turnp.innerHTML = "null";
-        } else {
-            turnp.innerHTML = str;
-        }
+        else
+            turnp.innerHTML = dancer.axis;
     }
 
     var dancer;
@@ -202,6 +201,8 @@
             this.theta=0;
             this.thetap=null;
             this.axis=null;
+
+            if(this.onturnchange){this.onturnchange();}
         }
 
     }
@@ -371,6 +372,7 @@
                 printscript(this.moves);
             };
             d1.onturnchange = function(){
+                printturn(this);
                 printturnscript(this.turns);
             }
 
