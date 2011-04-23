@@ -21,7 +21,7 @@
     <p id="moves"></p>
   </td>
   <td>
-    <p>turn</p>
+    <p>turns</p>
     <p id="turns"></p>
   </td>
 </tr>
@@ -31,6 +31,7 @@
     var movesp = document.getElementById("moves");
     var turnsp = document.getElementById("turns");
     var turnp = document.getElementById("turn");
+    var movep = document.getElementById("target");
     function moveToString(move) {
         ret = "";
         if(move.type=="move"){
@@ -64,12 +65,16 @@
             turnsp.innerHTML += turnToString(turn)+"</br>";
         }
     }
-	function settarget(str) {
-		var targetdiv = document.getElementById("target");
-        if( str==null ) {
-            targetdiv.innerHTML = "null";
+	function moveinfo(dancer) {
+        var tt = dancer.P.millis();
+
+        if( dancer.target!=null ) {
+            movep.innerHTML = dancer.magv.toFixed(2)+" "+dancer.d.toFixed(2)+"/"+dancer.dp.toFixed(2)+" "+dancer.target;
+        } else if(tt<dancer.nextmove){
+            var remaining = dancer.nextmove-tt;
+            movep.innerHTML = "rest "+remaining.toFixed(2);
         } else {
-            targetdiv.innerHTML = str;
+            movep.innerHTML = "none";
         }
 	}
     function printturn(dancer) {
@@ -135,7 +140,6 @@
     Dancer.prototype.linear_incr = function(time, dt) {
         // check if we're under a hold
         if(time < this.nextmove) {
-            settarget("hold");
             return;
         }
 
@@ -163,8 +167,6 @@
             this.d=0;
             this.dp=null;
             this.target=null;
-			
-			settarget(this.target);
         }
     }
 
@@ -236,7 +238,6 @@
 		
         this.magv = move.dist/dt;
         this.target = move.pos;
-		settarget(this.target);
 
         this.dp = move.dist;
     }
@@ -295,12 +296,16 @@
     }
     Dancer.prototype.swing = function(dancer,beats){
         //find center
-        //c = this.P.PVector.add(this.s,dancer.s)
-        //c.div(2);
+        c = this.P.PVector.add(this.s,dancer.s)
+        c.div(2);
         //draw together - move halfway to center
-        //bb = this.P.PVector
+        inchcloser = this.P.PVector.dist(this.s,c)/2;
+        this.enqueue_move(dancer.s, inchcloser, beats*(1/10));
+        this.enqueue_move_rest(beats*(8/10));
+        this.enqueue_move(dancer.s, -inchcloser, beats*(1/10));
 
         //orbit some number of times
+        this.enqueue_turn(c,"left",6,beats);
         //end up with the follow on the right
     }
     Dancer.prototype.balance = function(dancer, beats) {
@@ -367,6 +372,7 @@
     function sketchProc(processing) {
         processing.setup = function() {
             processing.size( 400,400 );
+            processing.frameRate(4);
 
             centerX = processing.width / 2, centerY = processing.height / 2;
 
@@ -390,6 +396,8 @@
       processing.draw = function() {
         // erase background
         processing.background(224);
+
+        moveinfo(d1);
 
         d1.incr();
         d2.incr();
