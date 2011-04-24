@@ -196,12 +196,8 @@
         }
 
         if(this.axis!=null) {
-            console.log("%s * %s =", this.magomega, dt);
             var dtheta = this.magomega*dt;
-            console.log("%s", dtheta );
-            console.log("%s + %s =", this.theta, dtheta);
             this.theta += dtheta;
-            console.log("%s", this.theta);
             // take the vector from axis to position
             var radius = this.P.PVector.sub(this.s, this.axis);
             // rotate it by dtheta
@@ -253,10 +249,10 @@
     Dancer.prototype.turn = function(axis,dir,places,beats) {
         console.log( "axis:%s dir:%s places:%s beats:%s", axis, dir, places, beats );
 
-        dt = beats*beatlen
+        var dt = beats*beatlen
         dtheta = places*(this.P.HALF_PI)
         if(dir==="right"){
-            dtheta = -dtheta;
+            var dtheta = -dtheta;
         }
 
         this.magomega = dtheta/dt;
@@ -307,17 +303,20 @@
     }
     Dancer.prototype.swing = function(dancer,beats){
         //find center
-        c = this.P.PVector.add(this.s,dancer.s)
+        var c = this.P.PVector.add(this.s,dancer.s)
         c.div(2);
         //draw together - move halfway to center
-        inchcloser = this.P.PVector.dist(this.s,c)/2;
-        this.enqueue_move(dancer.s, inchcloser, beats*(1/10));
+        var inchcloser = this.P.PVector.dist(this.s,c)/2;
+        this.enqueue_move(c, inchcloser, beats*(1/10));
         this.enqueue_move_rest(beats*(8/10));
-        this.enqueue_move(dancer.s, -inchcloser, beats*(1/10));
+        this.enqueue_move(c, -inchcloser, beats*(1/10));
 
-        //orbit some number of times
-        this.enqueue_turn(c,"left",6,beats);
-        //end up with the follow on the right
+        // orbit some number of times
+        // one turn for every four beats
+        var turns = Math.ceil( beats/4 );
+        // end up with the follow on the right
+        var places = turns*4+2;
+        this.enqueue_turn(c,"left",places,beats);
     }
     Dancer.prototype.balance = function(dancer, beats) {
         var ds = this.P.PVector.sub(dancer.s,this.s);
@@ -378,12 +377,28 @@
         this.activefollow.balance(this.inactivelead, beats);
         this.inactivelead.balance(this.activefollow, beats);
     }
+    Set.prototype.neighbor_swing = function(beats) {
+        this.neighbor();
+
+        this.activelead.swing(this.inactivefollow, beats);
+        this.inactivefollow.swing(this.activelead, beats);
+        this.activefollow.swing(this.inactivelead, beats);
+        this.inactivelead.swing(this.activefollow, beats);
+    }
+    Set.prototype.partner_swing = function(beats) {
+        //this.partner();
+
+        this.activelead.swing(this.activefollow, beats);
+        this.activefollow.swing(this.activelead, beats);
+        this.inactivelead.swing(this.inactivefollow, beats);
+        this.inactivefollow.swing(this.inactivelead, beats);
+    }
 
     // Simple way to attach js code to the canvas is by using a function
     function sketchProc(processing) {
         processing.setup = function() {
             processing.size( 400,400 );
-            processing.frameRate(2);
+            processing.frameRate(30);
 
             centerX = processing.width / 2, centerY = processing.height / 2;
 
