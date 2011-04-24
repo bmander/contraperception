@@ -33,15 +33,15 @@
     var turnp = document.getElementById("turn");
     var movep = document.getElementById("target");
     function moveToString(move) {
-        ret = "";
+        /*ret = "";
         if(move.type=="move"){
             return "[move-"+move.dist+"->("+move.pos.x+","+move.pos.y+") in "+move.beats+"]";
         } else if(move.type=="rest") {
 			return "[rest "+move.beats+"]";
 		} else {
             return "[turn]";
-        }
-
+        }*/
+        return "move";
     }
     function turnToString(turn) {
         ret = "";
@@ -152,7 +152,7 @@
         // start the next move if ready
         if(this.target==null && this.moves.length>0) {
             var nextmove = this.moves.shift();
-            this.move(nextmove);
+            nextmove();
             
             if(this.onmovechange){this.onmovechange();}
         }
@@ -262,11 +262,21 @@
         this.thetap = dtheta;
     }
     Dancer.prototype.enqueue_move = function(pos,dist,beats) {
-        this.moves.push( {'type':'move', 'pos':pos,'dist':dist,'beats':beats} );
+        var dancer = this;
+        var item = function() {
+            dancer.move( {'type':'move', 'pos':pos,'dist':dist,'beats':beats} );
+        }
+        this.moves.push( item );
+
         if(this.onmovechange){this.onmovechange();}
     }
 	Dancer.prototype.enqueue_move_rest = function(beats) {
-		this.moves.push( {'type':'rest', 'beats':beats } );
+        var dancer = this;
+        var item = function() {
+		    dancer.move( {'type':'rest', 'beats':beats } );
+        }
+        this.moves.push( item );
+
         if(this.onmovechange){this.onmovechange();}
 	}
     Dancer.prototype.enqueue_turn = function(axis,dir,places,beats) {
